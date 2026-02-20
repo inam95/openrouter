@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       String @id @default(uuid()) @map("id")
+  email    String @unique @map("email")
+  password String @map("password")
+  credits  Int    @default(0) @map("credits")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  apiKeys            ApiKey[]
+  onrampTransactions OnrampTransaction[]
+  conversations      Conversation[]
+
+  @@map("users")
+}
+
+model ApiKey {
+  id       String  @id @default(uuid()) @map("id")
+  name     String  @map("name")
+  apiKey   String  @unique @map("api_key")
+  disabled Boolean @default(false) @map("disabled")
+  deleted  Boolean @default(false) @map("deleted")
+  userId   String  @map("user_id")
+  user     User    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  conversations Conversation[]
+
+  @@map("api_keys")
+}
+
+model Company {
+  id      String @id @default(uuid()) @map("id")
+  name    String @map("name")
+  website String @map("website")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  models Model[]
+
+  @@map("companies")
+}
+
+model Model {
+  id        String  @id @default(uuid()) @map("id")
+  name      String  @map("name")
+  slug      String  @unique @map("slug")
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  modelProviderMapping ModelProviderMapping[]
+
+  @@map("models")
+}
+
+model Provider {
+  id      String @id @default(uuid()) @map("id")
+  name    String @map("name")
+  website String @map("website")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  modelProviderMapping ModelProviderMapping[]
+
+  @@map("providers")
+}
+
+model ModelProviderMapping {
+  id              String   @id @default(uuid()) @map("id")
+  modelId         String   @map("model_id")
+  inputTokenCost  Int      @map("input_token_cost")
+  outputTokenCost Int      @map("output_token_cost")
+  model           Model    @relation(fields: [modelId], references: [id])
+  providerId      String   @map("provider_id")
+  provider        Provider @relation(fields: [providerId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  conversations Conversation[]
+
+  @@map("model_provider_mappings")
+}
+
+model OnrampTransaction {
+  id     String @id @default(uuid()) @map("id")
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  amount Int    @map("amount")
+  status String @map("status")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("onramp_transactions")
+}
+
+model Conversation {
+  id                     String               @id @default(uuid()) @map("id")
+  userId                 String               @map("user_id")
+  user                   User                 @relation(fields: [userId], references: [id])
+  apiKeyId               String               @map("api_key_id")
+  apiKey                 ApiKey               @relation(fields: [apiKeyId], references: [id])
+  modelProviderMappingId String               @map("model_provider_mapping_id")
+  modelProviderMapping   ModelProviderMapping @relation(fields: [modelProviderMappingId], references: [id])
+  input                  String               @map("input")
+  output                 String               @map("output")
+  inputTokenCount        Int                  @map("input_token_count")
+  outputTokenCount       Int                  @map("output_token_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("conversations")
+}
