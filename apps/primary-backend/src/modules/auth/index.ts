@@ -5,11 +5,17 @@ import { AuthService } from "./services";
 export const app = new Elysia({ prefix: "auth" })
   .post(
     "/sign-up",
-    async ({ body }) => {
-      const userId = await AuthService.signup(body.email, body.password);
-      return {
-        id: userId,
-      };
+    async ({ body, status }) => {
+      try {
+        const userId = await AuthService.signup(body.email, body.password);
+        return {
+          id: userId,
+        };
+      } catch {
+        return status(400, {
+          message: "Error while sign in",
+        });
+      }
     },
     {
       body: AuthModel.signUpBody,

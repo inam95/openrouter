@@ -46,6 +46,7 @@
       "name": "primary-backend",
       "version": "1.0.50",
       "dependencies": {
+        "db": "*",
         "elysia": "latest",
       },
       "devDependencies": {
