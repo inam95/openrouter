@@ -9,7 +9,7 @@ export namespace AuthModel {
   export type SignInBody = typeof AuthModel.signInBody.static;
 
   export const signInResponse = t.Object({
-    token: t.String(),
+    message: t.Literal("Signed in successfully"),
   });
 
   export type SignInResponse = typeof signInResponse.static;
@@ -34,7 +34,7 @@ export namespace AuthModel {
   export type SignUpResponse = typeof signUpResponse.static;
 
   export const signUpFailedResponse = t.Object({
-    message: t.Literal("Error while sign in"),
+    message: t.Literal("Error while sign up"),
   });
 
   export type SignUpFailedResponse = typeof signUpFailedResponse.static;

@@ -1,8 +1,15 @@
 import { Elysia } from "elysia";
 import { AuthModel } from "./models";
 import { AuthService } from "./services";
+import jwt from "@elysiajs/jwt";
 
 export const app = new Elysia({ prefix: "auth" })
+  .use(
+    jwt({
+      name: "jwt",
+      secret: process.env.JWT_SECRET!,
+    })
+  )
   .post(
     "/sign-up",
     async ({ body, status }) => {
@@ -11,9 +18,10 @@ export const app = new Elysia({ prefix: "auth" })
         return {
           id: userId,
         };
-      } catch {
+      } catch (e) {
+        console.log(e);
         return status(400, {
-          message: "Error while sign in",
+          message: "Error while sign up",
         });
       }
     },
@@ -27,17 +35,33 @@ export const app = new Elysia({ prefix: "auth" })
   )
   .post(
     "/sign-in",
-    async ({ body }) => {
-      const token = await AuthService.signin(body.email, body.password);
-      return {
-        token,
-      };
+    async ({ jwt, body, status, cookie }) => {
+      const { correctCredentials, userId } = await AuthService.signin(
+        body.email,
+        body.password
+      );
+      if (correctCredentials && userId) {
+        const token = await jwt.sign({ userId });
+        cookie.auth.set({
+          value: token,
+          httpOnly: true,
+          maxAge: 7 * 86400,
+        });
+
+        return {
+          message: "Signed in successfully",
+        };
+      }
+
+      return status(403, {
+        message: "Invalid credentials",
+      });
     },
     {
       body: AuthModel.signInBody,
       response: {
         200: AuthModel.signInResponse,
-        400: AuthModel.signInFailedResponse,
+        403: AuthModel.signInFailedResponse,
       },
     }
   );
