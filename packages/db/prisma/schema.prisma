@@ -30,13 +30,15 @@ model User {
 }
 
 model ApiKey {
-  id       String  @id @default(uuid()) @map("id")
-  name     String  @map("name")
-  apiKey   String  @unique @map("api_key")
-  disabled Boolean @default(false) @map("disabled")
-  deleted  Boolean @default(false) @map("deleted")
-  userId   String  @map("user_id")
-  user     User    @relation(fields: [userId], references: [id])
+  id             String    @id @default(uuid()) @map("id")
+  name           String    @map("name")
+  apiKey         String    @unique @map("api_key")
+  disabled       Boolean   @default(false) @map("disabled")
+  deleted        Boolean   @default(false) @map("deleted")
+  lastUsed       DateTime? @map("last_used")
+  creditConsumed Int       @default(0) @map("credit_consumed")
+  userId         String    @map("user_id")
+  user           User      @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
