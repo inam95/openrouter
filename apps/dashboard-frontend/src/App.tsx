@@ -1,38 +1,51 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { APITester } from "./APITester";
-import "./index.css";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { BrowserRouter, Routes, Route } from "react-router";
+
+import { type App } from "primary-backend";
 
 import logo from "./logo.svg";
 import reactLogo from "./react.svg";
+import { treaty } from "@elysiajs/eden";
+import { Signup } from "./pages/signup";
+import { Signin } from "./pages/signin";
+import { Dashboard } from "./pages/dashboard";
+import { Credits } from "./pages/credits";
+import { ApiKeys } from "./pages/api-keys";
+import { Landing } from "./pages/landing";
 
 export function App() {
+  // const client = treaty<App>("localhost:3000");
+
+  // function signin() {
+  //   const res = client.auth["sign-in"]
+  //     .post({
+  //       email: "test1@test.com",
+  //       password: "123456",
+  //     })
+  //     .then((result) => {
+  //       if (result.status === 200) {
+  //         const data = result.data;
+  //       }
+  //     });
+  // }
+
   return (
-    <div className="container mx-auto p-8 text-center relative z-10">
-      <div className="flex justify-center items-center gap-8 mb-8">
-        <img
-          src={logo}
-          alt="Bun Logo"
-          className="h-36 p-6 transition-all duration-300 hover:drop-shadow-[0_0_2em_#646cffaa] scale-120"
-        />
-        <img
-          src={reactLogo}
-          alt="React Logo"
-          className="h-36 p-6 transition-all duration-300 hover:drop-shadow-[0_0_2em_#61dafbaa] [animation:spin_20s_linear_infinite]"
-        />
-      </div>
-      <Card>
-        <CardHeader className="gap-4">
-          <CardTitle className="text-3xl font-bold">Bun + React</CardTitle>
-          <CardDescription>
-            Edit <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono">src/App.tsx</code> and save to
-            test HMR
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <APITester />
-        </CardContent>
-      </Card>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/signin" element={<Signin />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/credits" element={<Credits />} />
+        <Route path="/api-keys" element={<ApiKeys />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
