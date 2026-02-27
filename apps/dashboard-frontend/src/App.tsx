@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@repo/ui/card";
 import { BrowserRouter, Routes, Route } from "react-router";
 
 import { type App } from "primary-backend";
