@@ -9,6 +9,7 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@repo/contracts": "*",
     "@elysiajs/cors": "^1.4.1",
     "db": "*",
     "elysia": "latest"

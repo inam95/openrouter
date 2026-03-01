@@ -13,8 +13,19 @@ export const app = new Elysia({ prefix: "auth" })
   .post(
     "/sign-up",
     async ({ body, status }) => {
+      const parsedBody = AuthModel.signUpBody.safeParse(body);
+      if (!parsedBody.success) {
+        return status(400, {
+          message:
+            parsedBody.error.issues[0]?.message ?? "Invalid sign up payload",
+        });
+      }
+
       try {
-        const userId = await AuthService.signup(body.email, body.password);
+        const userId = await AuthService.signup(
+          parsedBody.data.email,
+          parsedBody.data.password
+        );
         return {
           id: userId,
         };
@@ -36,9 +47,17 @@ export const app = new Elysia({ prefix: "auth" })
   .post(
     "/sign-in",
     async ({ jwt, body, status, cookie }) => {
+      const parsedBody = AuthModel.signInBody.safeParse(body);
+      if (!parsedBody.success) {
+        return status(400, {
+          message:
+            parsedBody.error.issues[0]?.message ?? "Invalid sign in payload",
+        });
+      }
+
       const { correctCredentials, userId } = await AuthService.signin(
-        body.email,
-        body.password
+        parsedBody.data.email,
+        parsedBody.data.password
       );
       if (correctCredentials && userId) {
         const token = await jwt.sign({ userId });
@@ -62,6 +81,7 @@ export const app = new Elysia({ prefix: "auth" })
       response: {
         200: AuthModel.signInResponse,
         403: AuthModel.signInFailedResponse,
+        400: AuthModel.signInFailedResponse,
       },
     }
   );

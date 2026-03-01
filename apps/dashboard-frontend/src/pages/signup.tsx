@@ -1,4 +1,5 @@
 import { client } from "@/client";
+import { signUpFormSchema } from "@repo/contracts";
 import {
   Alert,
   AlertDescription,
@@ -10,18 +11,10 @@ import {
   Label,
   Separator,
 } from "@repo/ui";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-
-type SignupPayload = {
-  email: string;
-  password: string;
-};
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 const CAPABILITIES = [
   {
@@ -45,44 +38,24 @@ const CAPABILITIES = [
 export function Signup() {
   const navigate = useNavigate();
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
     null
   );
 
-  const passwordChecks = useMemo(
-    () => ({
-      minLength: password.length >= 8,
-      hasLetter: /[a-zA-Z]/.test(password),
-      hasNumber: /\d/.test(password),
-    }),
-    [password]
-  );
-
-  const isPasswordStrong =
-    passwordChecks.minLength &&
-    passwordChecks.hasLetter &&
-    passwordChecks.hasNumber;
-  const passwordsMatch =
-    confirmPassword.length > 0 && password === confirmPassword;
-
-  const checksCompleted = [
-    passwordChecks.minLength,
-    passwordChecks.hasLetter,
-    passwordChecks.hasNumber,
-    passwordsMatch,
-  ].filter(Boolean).length;
-
   const mutation = useMutation({
-    mutationFn: async ({ email, password }: SignupPayload) => {
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    }) => {
       const response = await client.auth["sign-up"].post({ email, password });
 
       if (response.status !== 200) {
-        const responseData = response.data as { message?: string } | null;
+        const responseData = response.error?.value;
         throw new Error(
           responseData?.message ??
             "We could not create your account right now. Please try again."
@@ -95,13 +68,34 @@ export function Signup() {
       setFormError(null);
     },
     onSuccess: () => {
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
       setRedirectCountdown(3);
     },
     onError: (error) => {
       setFormError(error.message);
+    },
+  });
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    onSubmit: async ({ value }) => {
+      setFormError(null);
+      const parsed = signUpFormSchema.safeParse(value);
+      if (!parsed.success) {
+        setFormError(
+          parsed.error.issues[0]?.message ??
+            "Please fix the highlighted fields."
+        );
+        return;
+      }
+
+      mutation.mutate({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
     },
   });
 
@@ -125,31 +119,9 @@ export function Signup() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError(null);
-
-    if (!isValidEmail(email)) {
-      setFormError("Please provide a valid email address.");
-      return;
-    }
-    if (!isPasswordStrong) {
-      setFormError(
-        "Password must be at least 8 characters with a letter and a number."
-      );
-      return;
-    }
-    if (!passwordsMatch) {
-      setFormError("Passwords do not match.");
-      return;
-    }
-    mutation.mutate({ email, password });
+    event.stopPropagation();
+    void form.handleSubmit();
   }
-
-  const isSubmitDisabled =
-    mutation.isPending ||
-    mutation.isSuccess ||
-    email.length === 0 ||
-    password.length === 0 ||
-    confirmPassword.length === 0;
 
   /* ---- Success state ---- */
   if (mutation.isSuccess) {
@@ -378,123 +350,156 @@ export function Signup() {
               {/* Form */}
               <form onSubmit={onSubmit} className="stagger-enter space-y-4">
                 {/* Email */}
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="signup-email"
-                    className="text-xs uppercase tracking-wider text-muted-foreground"
-                  >
-                    Email
-                  </Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={mutation.isPending}
-                    className="h-10 bg-background/50 placeholder:text-muted-foreground/40"
-                  />
-                </div>
+                <form.Field name="email">
+                  {(field) => (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="signup-email"
+                        className="text-xs uppercase tracking-wider text-muted-foreground"
+                      >
+                        Email
+                      </Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@company.com"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        disabled={mutation.isPending}
+                        className="h-10 bg-background/50 placeholder:text-muted-foreground/40"
+                      />
+                    </div>
+                  )}
+                </form.Field>
 
                 {/* Password */}
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="signup-password"
-                    className="text-xs uppercase tracking-wider text-muted-foreground"
-                  >
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      placeholder="Min. 8 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={mutation.isPending}
-                      className="h-10 bg-background/50 pr-10 placeholder:text-muted-foreground/40"
-                    />
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-colors hover:text-foreground"
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                  </div>
-                </div>
+                <form.Field name="password">
+                  {(field) => (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="signup-password"
+                        className="text-xs uppercase tracking-wider text-muted-foreground"
+                      >
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="signup-password"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          placeholder="Min. 8 characters"
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          disabled={mutation.isPending}
+                          className="h-10 bg-background/50 pr-10 placeholder:text-muted-foreground/40"
+                        />
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-colors hover:text-foreground"
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </form.Field>
 
                 {/* Confirm password */}
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="signup-confirm-password"
-                    className="text-xs uppercase tracking-wider text-muted-foreground"
-                  >
-                    Confirm password
-                  </Label>
-                  <Input
-                    id="signup-confirm-password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="Re-enter your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={mutation.isPending}
-                    className="h-10 bg-background/50 placeholder:text-muted-foreground/40"
-                  />
-                </div>
+                <form.Field name="confirmPassword">
+                  {(field) => (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="signup-confirm-password"
+                        className="text-xs uppercase tracking-wider text-muted-foreground"
+                      >
+                        Confirm password
+                      </Label>
+                      <Input
+                        id="signup-confirm-password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="Re-enter your password"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        disabled={mutation.isPending}
+                        className="h-10 bg-background/50 placeholder:text-muted-foreground/40"
+                      />
+                    </div>
+                  )}
+                </form.Field>
 
                 {/* Password strength */}
-                {password.length > 0 && (
-                  <div className="space-y-3 rounded-lg border border-border/40 bg-background/30 p-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {/* Segmented strength bar */}
-                    <div className="flex gap-1">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="h-1 flex-1 rounded-full transition-colors duration-300"
-                          style={{
-                            backgroundColor:
-                              i < checksCompleted
-                                ? checksCompleted <= 1
-                                  ? "var(--destructive)"
-                                  : checksCompleted <= 2
-                                    ? "var(--chart-5)"
-                                    : checksCompleted <= 3
-                                      ? "var(--accent)"
-                                      : "var(--success)"
-                                : "var(--muted)",
-                          }}
-                        />
-                      ))}
-                    </div>
+                <form.Subscribe selector={(state) => state.values}>
+                  {(values) => {
+                    if (values.password.length === 0) return null;
 
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                      <PasswordCheck
-                        label="8+ characters"
-                        met={passwordChecks.minLength}
-                      />
-                      <PasswordCheck
-                        label="Has a letter"
-                        met={passwordChecks.hasLetter}
-                      />
-                      <PasswordCheck
-                        label="Has a number"
-                        met={passwordChecks.hasNumber}
-                      />
-                      <PasswordCheck
-                        label="Passwords match"
-                        met={passwordsMatch}
-                      />
-                    </div>
-                  </div>
-                )}
+                    const passwordChecks = {
+                      minLength: values.password.length >= 8,
+                      hasLetter: /[a-zA-Z]/.test(values.password),
+                      hasNumber: /\d/.test(values.password),
+                    };
+                    const passwordsMatch =
+                      values.confirmPassword.length > 0 &&
+                      values.password === values.confirmPassword;
+                    const checksCompleted = [
+                      passwordChecks.minLength,
+                      passwordChecks.hasLetter,
+                      passwordChecks.hasNumber,
+                      passwordsMatch,
+                    ].filter(Boolean).length;
+
+                    return (
+                      <div className="space-y-3 rounded-lg border border-border/40 bg-background/30 p-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {/* Segmented strength bar */}
+                        <div className="flex gap-1">
+                          {[0, 1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              className="h-1 flex-1 rounded-full transition-colors duration-300"
+                              style={{
+                                backgroundColor:
+                                  i < checksCompleted
+                                    ? checksCompleted <= 1
+                                      ? "var(--destructive)"
+                                      : checksCompleted <= 2
+                                        ? "var(--chart-5)"
+                                        : checksCompleted <= 3
+                                          ? "var(--accent)"
+                                          : "var(--success)"
+                                    : "var(--muted)",
+                              }}
+                            />
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                          <PasswordCheck
+                            label="8+ characters"
+                            met={passwordChecks.minLength}
+                          />
+                          <PasswordCheck
+                            label="Has a letter"
+                            met={passwordChecks.hasLetter}
+                          />
+                          <PasswordCheck
+                            label="Has a number"
+                            met={passwordChecks.hasNumber}
+                          />
+                          <PasswordCheck
+                            label="Passwords match"
+                            met={passwordsMatch}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }}
+                </form.Subscribe>
 
                 {/* Error */}
                 {formError && (
@@ -507,20 +512,33 @@ export function Signup() {
                 )}
 
                 {/* Submit */}
-                <Button
-                  type="submit"
-                  className="h-10 w-full font-medium"
-                  disabled={isSubmitDisabled}
-                >
-                  {mutation.isPending ? (
-                    <span className="flex items-center gap-2">
-                      <Spinner />
-                      Creating account...
-                    </span>
-                  ) : (
-                    "Create account"
-                  )}
-                </Button>
+                <form.Subscribe selector={(state) => state.values}>
+                  {(values) => {
+                    const isSubmitDisabled =
+                      mutation.isPending ||
+                      mutation.isSuccess ||
+                      values.email.length === 0 ||
+                      values.password.length === 0 ||
+                      values.confirmPassword.length === 0;
+
+                    return (
+                      <Button
+                        type="submit"
+                        className="h-10 w-full font-medium cursor-pointer"
+                        disabled={isSubmitDisabled}
+                      >
+                        {mutation.isPending ? (
+                          <span className="flex items-center gap-2">
+                            <Spinner />
+                            Creating account...
+                          </span>
+                        ) : (
+                          "Create account"
+                        )}
+                      </Button>
+                    );
+                  }}
+                </form.Subscribe>
               </form>
 
               <div className="mt-6">

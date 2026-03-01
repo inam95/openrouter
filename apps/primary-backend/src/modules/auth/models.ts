@@ -1,41 +1,30 @@
-import { t } from "elysia";
+import {
+  signInBodySchema,
+  signInFailedResponseSchema,
+  signInResponseSchema,
+  signUpBodySchema,
+  signUpFailedResponseSchema,
+  signUpResponseSchema,
+} from "@repo/contracts";
 
 export namespace AuthModel {
-  export const signInBody = t.Object({
-    email: t.String(),
-    password: t.String(),
-  });
+  export const signInBody = signInBodySchema;
+  export type SignInBody = import("@repo/contracts").SignInBody;
 
-  export type SignInBody = typeof AuthModel.signInBody.static;
+  export const signInFailedResponse = signInFailedResponseSchema;
+  export type SignInFailedResponse =
+    import("@repo/contracts").SignInFailedResponse;
 
-  export const signInResponse = t.Object({
-    message: t.Literal("Signed in successfully"),
-  });
+  export const signInResponse = signInResponseSchema;
+  export type SignInResponse = import("@repo/contracts").SignInResponse;
 
-  export type SignInResponse = typeof signInResponse.static;
+  export const signUpBody = signUpBodySchema;
+  export type SignUpBody = import("@repo/contracts").SignUpBody;
 
-  export const signUpBody = t.Object({
-    email: t.String(),
-    password: t.String(),
-  });
+  export const signUpFailedResponse = signUpFailedResponseSchema;
+  export type SignUpFailedResponse =
+    import("@repo/contracts").SignUpFailedResponse;
 
-  export const signInFailedResponse = t.Object({
-    message: t.Literal("Invalid credentials"),
-  });
-
-  export type SignInFailedResponse = typeof signInFailedResponse.static;
-
-  export type SignUpBody = typeof signUpBody.static;
-
-  export const signUpResponse = t.Object({
-    id: t.String(),
-  });
-
-  export type SignUpResponse = typeof signUpResponse.static;
-
-  export const signUpFailedResponse = t.Object({
-    message: t.Literal("Error while sign up"),
-  });
-
-  export type SignUpFailedResponse = typeof signUpFailedResponse.static;
+  export const signUpResponse = signUpResponseSchema;
+  export type SignUpResponse = import("@repo/contracts").SignUpResponse;
 }
