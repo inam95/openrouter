@@ -81,6 +81,15 @@ export function Signup() {
       password: "",
       confirmPassword: "",
     },
+    validators: {
+      onChange: ({ value }) => {
+        const parsed = signUpFormSchema.safeParse(value);
+        if (parsed.success) return undefined;
+        return (
+          parsed.error.issues[0]?.message ?? "Please fix the highlighted fields."
+        );
+      },
+    },
     onSubmit: async ({ value }) => {
       setFormError(null);
       const parsed = signUpFormSchema.safeParse(value);
@@ -92,10 +101,14 @@ export function Signup() {
         return;
       }
 
-      mutation.mutate({
-        email: parsed.data.email,
-        password: parsed.data.password,
-      });
+      try {
+        await mutation.mutateAsync({
+          email: parsed.data.email,
+          password: parsed.data.password,
+        });
+      } catch {
+        // Error UI is handled by React Query onError -> formError state.
+      }
     },
   });
 
@@ -512,22 +525,17 @@ export function Signup() {
                 )}
 
                 {/* Submit */}
-                <form.Subscribe selector={(state) => state.values}>
-                  {(values) => {
-                    const isSubmitDisabled =
-                      mutation.isPending ||
-                      mutation.isSuccess ||
-                      values.email.length === 0 ||
-                      values.password.length === 0 ||
-                      values.confirmPassword.length === 0;
-
+                <form.Subscribe
+                  selector={(state) => [state.canSubmit, state.isSubmitting]}
+                >
+                  {([canSubmit, isSubmitting]) => {
                     return (
                       <Button
                         type="submit"
                         className="h-10 w-full font-medium cursor-pointer"
-                        disabled={isSubmitDisabled}
+                        disabled={!canSubmit || isSubmitting || mutation.isSuccess}
                       >
-                        {mutation.isPending ? (
+                        {isSubmitting ? (
                           <span className="flex items-center gap-2">
                             <Spinner />
                             Creating account...
