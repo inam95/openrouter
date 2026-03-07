@@ -1,16 +1,13 @@
-import { t } from "elysia";
+import {
+  onrampFailedResponseSchema,
+  onrampResponseSchema,
+} from "@repo/contracts";
 
 export namespace PaymentModel {
-  export const onrampResponse = t.Object({
-    message: t.Literal("Onramp successful"),
-    credits: t.Number(),
-  });
+  export const onrampResponse = onrampResponseSchema;
+  export type OnrampResponse = import("@repo/contracts").OnrampResponse;
 
-  export type OnrampResponse = typeof onrampResponse.static;
-
-  export const onrampFailedResponse = t.Object({
-    message: t.Literal("Onramp failed"),
-  });
-
-  export type OnrampFailedResponse = typeof onrampFailedResponse.static;
+  export const onrampFailedResponse = onrampFailedResponseSchema;
+  export type OnrampFailedResponse =
+    import("@repo/contracts").OnrampFailedResponse;
 }

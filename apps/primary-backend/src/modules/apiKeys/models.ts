@@ -1,63 +1,42 @@
-import { t } from "elysia";
+import {
+  createApiKeyBodySchema,
+  createApiKeyResponseSchema,
+  deleteApiKeyFailedResponseSchema,
+  deleteApiKeyResponseSchema,
+  getApiKeysResponseSchema,
+  updateApiKeyBodySchema,
+  updateApiKeyFailedResponseSchema,
+  updateApiKeyResponseSchema,
+} from "@repo/contracts";
 
 export namespace ApiKeyModel {
-  export const createApiKeyBody = t.Object({
-    name: t.String(),
-  });
+  export const createApiKeyBody = createApiKeyBodySchema;
+  export type CreateApiKeyBody = import("@repo/contracts").CreateApiKeyBody;
 
-  export type CreateApiKeyBody = typeof createApiKeyBody.static;
+  export const createApiKeyResponse = createApiKeyResponseSchema;
+  export type CreateApiKeyResponse =
+    import("@repo/contracts").CreateApiKeyResponse;
 
-  export const createApiKeyResponse = t.Object({
-    id: t.String(),
-    apiKey: t.String(),
-  });
+  export const updateApiKeyBody = updateApiKeyBodySchema;
+  export type UpdateApiKeyBody = import("@repo/contracts").UpdateApiKeyBody;
 
-  export type CreateApiKeyResponse = typeof createApiKeyResponse.static;
+  export const updateApiKeyResponse = updateApiKeyResponseSchema;
+  export type UpdateApiKeyResponse =
+    import("@repo/contracts").UpdateApiKeyResponse;
 
-  export const updateApiKeyBody = t.Object({
-    disable: t.Boolean(),
-  });
-
-  export type UpdateApiKeyBody = typeof updateApiKeyBody.static;
-
-  export const updateApiKeyResponse = t.Object({
-    message: t.Literal("API key disabled successfully"),
-  });
-
-  export type UpdateApiKeyResponse = typeof updateApiKeyResponse.static;
-
-  export const updateApiKeyFailedResponse = t.Object({
-    message: t.Literal("Error occurred while disabling API key"),
-  });
-
+  export const updateApiKeyFailedResponse = updateApiKeyFailedResponseSchema;
   export type UpdateApiKeyFailedResponse =
-    typeof updateApiKeyFailedResponse.static;
+    import("@repo/contracts").UpdateApiKeyFailedResponse;
 
-  export const getApiKeysResponse = t.Object({
-    apiKeys: t.Array(
-      t.Object({
-        id: t.String(),
-        name: t.String(),
-        apiKey: t.String(),
-        lastUsed: t.Nullable(t.Date()),
-        creditConsumed: t.Number(),
-        disabled: t.Boolean(),
-      })
-    ),
-  });
+  export const getApiKeysResponse = getApiKeysResponseSchema;
+  export type GetApiKeysResponse =
+    import("@repo/contracts").GetApiKeysResponse;
 
-  export type GetApiKeysResponse = typeof getApiKeysResponse.static;
+  export const deleteApiKeyResponse = deleteApiKeyResponseSchema;
+  export type DeleteApiKeyResponse =
+    import("@repo/contracts").DeleteApiKeyResponse;
 
-  export const deleteApiKeyResponse = t.Object({
-    message: t.Literal("API key deleted successfully"),
-  });
-
-  export type DeleteApiKeyResponse = typeof deleteApiKeyResponse.static;
-
-  export const deleteApiKeyFailedResponse = t.Object({
-    message: t.Literal("Deleting API key unsuccessful"),
-  });
-
+  export const deleteApiKeyFailedResponse = deleteApiKeyFailedResponseSchema;
   export type DeleteApiKeyFailedResponse =
-    typeof deleteApiKeyFailedResponse.static;
+    import("@repo/contracts").DeleteApiKeyFailedResponse;
 }

@@ -1,45 +1,18 @@
-import { t } from "elysia";
+import {
+  getModelProvidersResponseSchema,
+  getModelsResponseSchema,
+  getProvidersResponseSchema,
+} from "@repo/contracts";
 
 export namespace ModelsModel {
-  export const getModelsResponse = t.Object({
-    models: t.Array(
-      t.Object({
-        id: t.String(),
-        name: t.String(),
-        slug: t.String(),
-        company: t.Object({
-          id: t.String(),
-          name: t.String(),
-          website: t.String(),
-        }),
-      })
-    ),
-  });
+  export const getModelsResponse = getModelsResponseSchema;
+  export type GetModelsResponse = import("@repo/contracts").GetModelsResponse;
 
-  export type GetModelsResponse = typeof getModelsResponse.static;
+  export const getProvidersResponse = getProvidersResponseSchema;
+  export type GetProvidersResponse =
+    import("@repo/contracts").GetProvidersResponse;
 
-  export const getProvidersResponse = t.Object({
-    providers: t.Array(
-      t.Object({
-        id: t.String(),
-        name: t.String(),
-        website: t.String(),
-      })
-    ),
-  });
-
-  export type GetProvidersResponse = typeof getProvidersResponse.static;
-
-  export const getModelProvidersResponse = t.Object({
-    providers: t.Array(
-      t.Object({
-        id: t.String(),
-        providerId: t.String(),
-        providerName: t.String(),
-        providerWebsite: t.String(),
-        inputTokenCost: t.Number(),
-        outputTokenCost: t.Number(),
-      })
-    ),
-  });
+  export const getModelProvidersResponse = getModelProvidersResponseSchema;
+  export type GetModelProvidersResponse =
+    import("@repo/contracts").GetModelProvidersResponse;
 }

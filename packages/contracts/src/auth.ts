@@ -31,7 +31,7 @@ export const signInBodySchema = z.object({
 export type SignInBody = z.infer<typeof signInBodySchema>;
 
 export const signInResponseSchema = z.object({
-  message: z.literal("Signed in successfully"),
+  message: z.string(),
 });
 
 export type SignInResponse = z.infer<typeof signInResponseSchema>;
