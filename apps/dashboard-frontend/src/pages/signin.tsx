@@ -17,20 +17,20 @@ import { type FormEvent, useState } from "react";
 
 const CAPABILITIES = [
   {
-    label: "200+ Models",
-    detail: "Access GPT-4, Claude, Gemini, Llama & more through one endpoint",
+    label: "Latest AI Models",
+    detail: "Access flagship models from major providers through one integration surface",
   },
   {
-    label: "Smart Fallback",
-    detail: "Automatic failover across providers — zero downtime",
+    label: "One Consistent API",
+    detail: "Keep your app code simple with a unified request shape across providers",
   },
   {
-    label: "Real-time Analytics",
-    detail: "Per-request cost, latency, and token tracking",
+    label: "Provider Flexibility",
+    detail: "Switch models and providers without rebuilding your product around one vendor",
   },
   {
-    label: "Pay As You Go",
-    detail: "Transparent pricing, no minimums, cancel anytime",
+    label: "Fast Iteration",
+    detail: "Compare quality, speed, and cost without changing your architecture",
   },
 ];
 
@@ -142,7 +142,7 @@ export function Signin() {
         />
 
         <div className="relative z-10 flex h-full flex-col justify-between p-10 xl:p-14">
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex w-fit items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-lg border border-border/60 bg-card/60 backdrop-blur-sm">
               <svg
                 viewBox="0 0 24 24"
@@ -161,7 +161,7 @@ export function Signin() {
             <span className="text-sm font-semibold tracking-tight text-foreground">
               OpenRouter
             </span>
-          </div>
+          </Link>
 
           <div className="max-w-md space-y-10">
             <div className="space-y-4">
@@ -171,8 +171,8 @@ export function Signin() {
                 <span className="text-primary">back.</span>
               </h1>
               <p className="max-w-sm text-base leading-relaxed text-muted-foreground">
-                Sign in to your dashboard. Your models, analytics, and API keys
-                are waiting.
+                Sign in to continue routing across the best AI models from one
+                unified interface.
               </p>
             </div>
 
@@ -204,7 +204,7 @@ export function Signin() {
               style={{ backgroundColor: "var(--primary)" }}
             />
             <p className="text-xs text-muted-foreground">
-              Trusted by 10,000+ developers
+              One integration, infinite possibilities
             </p>
           </div>
         </div>
@@ -220,7 +220,7 @@ export function Signin() {
 
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile-only branding */}
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
+          <Link to="/" className="mb-8 flex w-fit items-center gap-3 lg:hidden">
             <div className="flex size-8 items-center justify-center rounded-lg border border-border/60 bg-card/60">
               <svg
                 viewBox="0 0 24 24"
@@ -239,7 +239,7 @@ export function Signin() {
             <span className="text-sm font-semibold tracking-tight text-foreground">
               OpenRouter
             </span>
-          </div>
+          </Link>
 
           <Card className="card-glow border-border/50 bg-card/70 backdrop-blur-xl">
             <CardContent className="p-6 sm:p-8">
@@ -248,7 +248,7 @@ export function Signin() {
                   Sign in
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Enter your credentials to access your dashboard.
+                  Return to your unified model gateway.
                 </p>
               </div>
 

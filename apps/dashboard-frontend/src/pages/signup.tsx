@@ -18,20 +18,20 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 
 const CAPABILITIES = [
   {
-    label: "200+ Models",
-    detail: "Access GPT-4, Claude, Gemini, Llama & more through one endpoint",
+    label: "Latest AI Models",
+    detail: "Access flagship models from major providers through one integration surface",
   },
   {
-    label: "Smart Fallback",
-    detail: "Automatic failover across providers — zero downtime",
+    label: "One Consistent API",
+    detail: "Keep your app code simple with a unified request shape across providers",
   },
   {
-    label: "Real-time Analytics",
-    detail: "Per-request cost, latency, and token tracking",
+    label: "Provider Flexibility",
+    detail: "Switch models and providers without rebuilding your product around one vendor",
   },
   {
-    label: "Pay As You Go",
-    detail: "Transparent pricing, no minimums, cancel anytime",
+    label: "Fast Iteration",
+    detail: "Compare quality, speed, and cost without changing your architecture",
   },
 ];
 
@@ -185,7 +185,7 @@ export function Signup() {
               You're in.
             </h2>
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Your workspace is ready. Redirecting to sign in
+              Your account is ready. Redirecting to sign in
               {redirectCountdown !== null && (
                 <span className="font-mono text-foreground">
                   {" "}
@@ -245,7 +245,7 @@ export function Signup() {
         {/* Content overlay */}
         <div className="relative z-10 flex h-full flex-col justify-between p-10 xl:p-14">
           {/* Logo mark */}
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex w-fit items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-lg border border-border/60 bg-card/60 backdrop-blur-sm">
               <svg
                 viewBox="0 0 24 24"
@@ -264,19 +264,19 @@ export function Signup() {
             <span className="text-sm font-semibold tracking-tight text-foreground">
               OpenRouter
             </span>
-          </div>
+          </Link>
 
           {/* Hero text */}
           <div className="max-w-md space-y-10">
             <div className="space-y-4">
               <h1 className="text-5xl font-bold leading-[1.08] tracking-tight text-foreground xl:text-6xl">
-                Route to
+                Build with
                 <br />
-                <span className="text-primary">any model.</span>
+                <span className="text-primary">every model.</span>
               </h1>
               <p className="max-w-sm text-base leading-relaxed text-muted-foreground">
-                A single API that unifies every major LLM. Build once, switch
-                providers in a line of code.
+                Create your account and start routing across the best AI models
+                from one unified interface.
               </p>
             </div>
 
@@ -310,7 +310,7 @@ export function Signup() {
               style={{ backgroundColor: "var(--primary)" }}
             />
             <p className="text-xs text-muted-foreground">
-              Trusted by 10,000+ developers
+              One integration, infinite possibilities
             </p>
           </div>
         </div>
@@ -327,7 +327,7 @@ export function Signup() {
 
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile-only branding */}
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
+          <Link to="/" className="mb-8 flex w-fit items-center gap-3 lg:hidden">
             <div className="flex size-8 items-center justify-center rounded-lg border border-border/60 bg-card/60">
               <svg
                 viewBox="0 0 24 24"
@@ -346,7 +346,7 @@ export function Signup() {
             <span className="text-sm font-semibold tracking-tight text-foreground">
               OpenRouter
             </span>
-          </div>
+          </Link>
 
           <Card className="card-glow border-border/50 bg-card/70 backdrop-blur-xl">
             <CardContent className="p-6 sm:p-8">
@@ -356,7 +356,7 @@ export function Signup() {
                   Create an account
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Get your API key and start routing in under a minute.
+                  Start building with one API for every AI model.
                 </p>
               </div>
 
