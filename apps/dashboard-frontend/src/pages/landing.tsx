@@ -1,5 +1,5 @@
 import { client } from "@/client";
-import { Badge, Button, Card, CardContent, Separator } from "@repo/ui";
+import { Badge, Button, Card, CardContent, Separator, Skeleton } from "@repo/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 
@@ -56,11 +56,13 @@ export function Landing() {
     },
   });
 
+  const isModelsLoading = modelsQuery.isPending && !modelsQuery.data;
   const modelCount = modelsQuery.data?.models.length;
   const highlightedModels = modelsQuery.data?.models.slice(0, 6) ?? [];
   const companyNames = Array.from(
     new Set(modelsQuery.data?.models.map((model) => model.company.name) ?? [])
   ).slice(0, 6);
+  const showPopularModelsSection = isModelsLoading || highlightedModels.length > 0;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -128,7 +130,13 @@ export function Landing() {
                 className="mb-6 border-border/60 bg-card/50 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground"
               >
                 <span className="mr-2 inline-flex size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {modelCount ? `${modelCount}+ models available` : "Loading model surface"}
+                {isModelsLoading ? (
+                  <Skeleton className="h-3 w-34 rounded-full" />
+                ) : modelCount ? (
+                  `${modelCount}+ models available`
+                ) : (
+                  "Model surface unavailable"
+                )}
               </Badge>
 
               <h1 className="max-w-4xl text-5xl font-bold leading-[1.02] tracking-tight text-balance sm:text-6xl lg:text-7xl">
@@ -171,8 +179,16 @@ export function Landing() {
               </div>
 
               <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                <MetricTile value={modelCount ? `${modelCount}+` : "--"} label="models" />
-                <MetricTile value={`${companyNames.length || 0}+`} label="major providers" />
+                <MetricTile
+                  value={modelCount ? `${modelCount}+` : "--"}
+                  label="models"
+                  loading={isModelsLoading}
+                />
+                <MetricTile
+                  value={`${companyNames.length || 0}+`}
+                  label="major providers"
+                  loading={isModelsLoading}
+                />
                 <MetricTile value="1" label="integration surface" />
               </div>
 
@@ -270,7 +286,9 @@ export function Landing() {
                       </div>
 
                       <div className="mt-4 space-y-2">
-                        {highlightedModels.length > 0 ? (
+                        {isModelsLoading ? (
+                          <ModelSurfaceSkeleton />
+                        ) : highlightedModels.length > 0 ? (
                           highlightedModels.map((model) => (
                             <div
                               key={model.id}
@@ -304,7 +322,9 @@ export function Landing() {
                         Provider coverage
                       </p>
                       <div className="mt-4 space-y-3">
-                        {companyNames.length > 0 ? (
+                        {isModelsLoading ? (
+                          <ProviderCoverageSkeleton />
+                        ) : companyNames.length > 0 ? (
                           companyNames.map((company, index) => (
                             <div key={company} className="space-y-1.5">
                               <div className="flex items-center justify-between text-xs">
@@ -397,7 +417,7 @@ export function Landing() {
             </div>
           </section>
 
-          {modelsQuery.data?.models && modelsQuery.data.models.length > 0 && (
+          {showPopularModelsSection && (
             <section className="border-t border-border/40 py-20">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="max-w-xl">
@@ -420,33 +440,37 @@ export function Landing() {
               </div>
 
               <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {modelsQuery.data.models.slice(0, 9).map((model, index) => (
-                  <Card
-                    key={model.id}
-                    className={`border-border/50 backdrop-blur-xl ${
-                      index === 0
-                        ? "card-glow xl:col-span-2 bg-card/65"
-                        : "bg-card/45"
-                    }`}
-                  >
-                    <CardContent className="flex items-center gap-4 p-5">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-background/50 text-sm font-bold text-primary">
-                        {model.company.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-base font-medium tracking-tight text-foreground">
-                          {model.name}
-                        </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {model.company.name}
-                        </p>
-                      </div>
-                      <span className="rounded-full border border-border/50 bg-background/45 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                        model
-                      </span>
-                    </CardContent>
-                  </Card>
-                ))}
+                {isModelsLoading
+                  ? Array.from({ length: 9 }).map((_, index) => (
+                      <PopularModelSkeleton key={index} featured={index === 0} />
+                    ))
+                  : modelsQuery.data?.models.slice(0, 9).map((model, index) => (
+                      <Card
+                        key={model.id}
+                        className={`border-border/50 backdrop-blur-xl ${
+                          index === 0
+                            ? "card-glow xl:col-span-2 bg-card/65"
+                            : "bg-card/45"
+                        }`}
+                      >
+                        <CardContent className="flex items-center gap-4 p-5">
+                          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-background/50 text-sm font-bold text-primary">
+                            {model.company.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-base font-medium tracking-tight text-foreground">
+                              {model.name}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {model.company.name}
+                            </p>
+                          </div>
+                          <span className="rounded-full border border-border/50 bg-background/45 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                            model
+                          </span>
+                        </CardContent>
+                      </Card>
+                    ))}
               </div>
             </section>
           )}
@@ -504,14 +528,77 @@ export function Landing() {
   );
 }
 
-function MetricTile({ value, label }: { value: string; label: string }) {
+function MetricTile({
+  value,
+  label,
+  loading = false,
+}: {
+  value: string;
+  label: string;
+  loading?: boolean;
+}) {
   return (
     <div className="rounded-2xl border border-border/50 bg-card/45 px-4 py-4 backdrop-blur-sm">
-      <div className="text-2xl font-semibold tracking-tight text-foreground">
-        {value}
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+      {loading ? (
+        <>
+          <Skeleton className="h-7 w-14" />
+          <Skeleton className="mt-2 h-4 w-20" />
+        </>
+      ) : (
+        <>
+          <div className="text-2xl font-semibold tracking-tight text-foreground">
+            {value}
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+        </>
+      )}
     </div>
+  );
+}
+
+function ModelSurfaceSkeleton() {
+  return Array.from({ length: 6 }).map((_, index) => (
+    <div
+      key={index}
+      className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/35 px-3 py-2.5"
+    >
+      <Skeleton className="size-8 rounded-lg border border-border/50 bg-card/60" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+    </div>
+  ));
+}
+
+function ProviderCoverageSkeleton() {
+  return Array.from({ length: 6 }).map((_, index) => (
+    <div key={index} className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-3 w-6" />
+      </div>
+      <Skeleton className="h-1.5 w-full rounded-full" />
+    </div>
+  ));
+}
+
+function PopularModelSkeleton({ featured = false }: { featured?: boolean }) {
+  return (
+    <Card
+      className={`border-border/50 backdrop-blur-xl ${
+        featured ? "card-glow xl:col-span-2 bg-card/65" : "bg-card/45"
+      }`}
+    >
+      <CardContent className="flex items-center gap-4 p-5">
+        <Skeleton className="size-11 shrink-0 rounded-2xl border border-border/50 bg-background/50" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3 w-1/3" />
+        </div>
+        <Skeleton className="h-6 w-14 rounded-full" />
+      </CardContent>
+    </Card>
   );
 }
 
