@@ -17,7 +17,7 @@ import {
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router";
 
-import { formatCredits } from "./dashboard-data";
+import { formatCredits } from "../lib/formatters";
 
 type DashboardShellProps = {
   activeNav: "dashboard" | "api-keys" | "credits";
@@ -79,9 +79,7 @@ export function DashboardShell({
                   <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
                     OpenRouter
                   </span>
-                  <p className="text-[11px] text-sidebar-foreground/55">
-                    Workspace
-                  </p>
+                  <p className="text-[11px] text-sidebar-foreground/55">Workspace</p>
                 </div>
               </Link>
             </SidebarHeader>
@@ -115,17 +113,13 @@ export function DashboardShell({
                   <SidebarMetric
                     label="Credits"
                     value={
-                      typeof credits === "number"
-                        ? formatCredits(credits)
-                        : "Loading"
+                      typeof credits === "number" ? formatCredits(credits) : "Loading"
                     }
                   />
                   <SidebarMetric
                     label="Keys"
                     value={
-                      typeof apiKeyCount === "number"
-                        ? `${apiKeyCount}`
-                        : "Loading"
+                      typeof apiKeyCount === "number" ? `${apiKeyCount}` : "Loading"
                     }
                   />
                 </SidebarGroupContent>

@@ -1,18 +1,17 @@
-import { DashboardShell } from "@/dashboard-shell";
-import {
-  createApiKey,
-  dashboardQueryKeys,
-  fetchApiKeys,
-  fetchProfile,
-  formatCredits,
-  formatLastUsed,
-  maskApiKey,
-} from "@/dashboard-data";
+import { ApiKeyListItem } from "@/features/dashboard/components/api-key-list-item";
+import { ApiKeyListItemSkeleton } from "@/features/dashboard/components/api-key-list-item-skeleton";
+import { DashboardEmptyState } from "@/features/dashboard/components/dashboard-empty-state";
+import { DashboardShell } from "@/features/dashboard/components/dashboard-shell";
+import { DashboardStatTile } from "@/features/dashboard/components/dashboard-stat-tile";
+import { createApiKey, fetchApiKeys } from "@/features/dashboard/lib/api-keys";
+import { formatCredits } from "@/features/dashboard/lib/formatters";
+import { fetchProfile } from "@/features/dashboard/lib/profile";
+import { dashboardQueryKeys } from "@/features/dashboard/lib/query-keys";
+import { getApiKeysSummary } from "@/features/dashboard/lib/selectors";
 import { createApiKeyBodySchema, type CreateApiKeyResponse } from "@repo/contracts";
 import {
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -21,7 +20,6 @@ import {
   CardTitle,
   Input,
   Label,
-  Skeleton,
 } from "@repo/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -63,11 +61,7 @@ export function ApiKeys() {
   });
 
   const apiKeys = apiKeysQuery.data?.apiKeys ?? [];
-  const activeKeys = apiKeys.filter((apiKey) => !apiKey.disabled);
-  const totalSpend = apiKeys.reduce(
-    (total, apiKey) => total + apiKey.creditConsumed,
-    0
-  );
+  const { activeKeyCount, totalSpend } = getApiKeysSummary(apiKeys);
   const isLoading = apiKeysQuery.isPending && !apiKeysQuery.data;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -255,51 +249,17 @@ export function ApiKeys() {
             <CardContent className="space-y-3 pt-5">
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, index) => (
-                  <ApiKeyCardSkeleton key={index} />
+                  <ApiKeyListItemSkeleton key={index} />
                 ))
               ) : apiKeys.length > 0 ? (
                 apiKeys.map((apiKey) => (
-                  <div
-                    key={apiKey.id}
-                    className="rounded-xl border border-border/35 bg-background/25 px-4 py-3"
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-foreground">
-                            {apiKey.name}
-                          </p>
-                          <Badge
-                            variant="outline"
-                            className={
-                              apiKey.disabled
-                                ? "border-border/50 bg-background/30 text-muted-foreground"
-                                : "border-primary/30 bg-primary/10 text-foreground"
-                            }
-                          >
-                            {apiKey.disabled ? "disabled" : "active"}
-                          </Badge>
-                        </div>
-                        <p className="mt-2 font-mono text-xs text-muted-foreground">
-                          {maskApiKey(apiKey.apiKey)}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 text-xs sm:min-w-[220px]">
-                        <MetaItem
-                          label="Last used"
-                          value={formatLastUsed(apiKey.lastUsed)}
-                        />
-                        <MetaItem
-                          label="Spent"
-                          value={formatCredits(apiKey.creditConsumed)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <ApiKeyListItem key={apiKey.id} apiKey={apiKey} />
                 ))
               ) : (
-                <EmptyState />
+                <DashboardEmptyState
+                  title="No API keys created yet"
+                  detail="Your first key will appear here after you create it."
+                />
               )}
             </CardContent>
           </Card>
@@ -314,17 +274,23 @@ export function ApiKeys() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3 pt-5">
-              <MiniStat
+              <DashboardStatTile
                 label="Total keys"
-                value={isLoading ? "..." : `${apiKeys.length}`}
+                value={isLoading ? null : `${apiKeys.length}`}
+                cardClassName="border-border/35 bg-background/25"
+                valueClassName="text-2xl"
               />
-              <MiniStat
+              <DashboardStatTile
                 label="Active keys"
-                value={isLoading ? "..." : `${activeKeys.length}`}
+                value={isLoading ? null : `${activeKeyCount}`}
+                cardClassName="border-border/35 bg-background/25"
+                valueClassName="text-2xl"
               />
-              <MiniStat
+              <DashboardStatTile
                 label="Credits consumed"
-                value={isLoading ? "..." : formatCredits(totalSpend)}
+                value={isLoading ? null : formatCredits(totalSpend)}
+                cardClassName="border-border/35 bg-background/25"
+                valueClassName="text-2xl"
               />
             </CardContent>
           </Card>
@@ -351,66 +317,6 @@ export function ApiKeys() {
         </div>
       </div>
     </DashboardShell>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-border/35 bg-background/25 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="rounded-xl border border-dashed border-border/55 bg-background/20 p-5">
-      <p className="text-base font-semibold text-foreground">
-        No API keys created yet
-      </p>
-      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-        Your first key will appear here after you create it.
-      </p>
-    </div>
-  );
-}
-
-function ApiKeyCardSkeleton() {
-  return (
-    <div className="rounded-xl border border-border/35 bg-background/25 px-4 py-3">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-40" />
-        </div>
-        <div className="grid grid-cols-2 gap-4 sm:min-w-[220px]">
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-4 w-20" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-4 w-16" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MetaItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-sm text-foreground">{value}</p>
-    </div>
   );
 }
 

@@ -1,11 +1,15 @@
-import { DashboardShell } from "@/dashboard-shell";
+import { DashboardShell } from "@/features/dashboard/components/dashboard-shell";
+import { DashboardStatTile } from "@/features/dashboard/components/dashboard-stat-tile";
+import { fetchApiKeys } from "@/features/dashboard/lib/api-keys";
+import { onrampCredits } from "@/features/dashboard/lib/credits";
+import { formatCredits } from "@/features/dashboard/lib/formatters";
+import { fetchProfile } from "@/features/dashboard/lib/profile";
+import { dashboardQueryKeys } from "@/features/dashboard/lib/query-keys";
 import {
-  dashboardQueryKeys,
-  fetchApiKeys,
-  fetchProfile,
-  formatCredits,
-  onrampCredits,
-} from "@/dashboard-data";
+  getApiKeysSummary,
+  getCreditTier,
+  getReserveWidth,
+} from "@/features/dashboard/lib/selectors";
 import {
   Alert,
   AlertDescription,
@@ -54,19 +58,16 @@ export function Credits() {
 
   const credits = profileQuery.data?.credits ?? 0;
   const apiKeys = apiKeysQuery.data?.apiKeys ?? [];
-  const totalSpend = apiKeys.reduce(
-    (total, apiKey) => total + apiKey.creditConsumed,
-    0
-  );
-  const activeKeys = apiKeys.filter((apiKey) => !apiKey.disabled).length;
+  const { activeKeyCount, totalSpend } = getApiKeysSummary(apiKeys);
   const isLoading = profileQuery.isPending && !profileQuery.data;
+  const creditTier = getCreditTier(credits);
   const reserveLabel =
-    credits >= 250
+    creditTier === "healthy"
       ? "Ready to experiment"
-      : credits >= 100
+      : creditTier === "watch"
         ? "Build, but keep an eye on spend"
         : "Low balance";
-  const reserveWidth = Math.min(100, Math.max(10, (credits / 300) * 100));
+  const reserveWidth = getReserveWidth(credits);
 
   return (
     <DashboardShell
@@ -152,9 +153,9 @@ export function Credits() {
                       style={{
                         width: `${reserveWidth}%`,
                         background:
-                          credits >= 250
+                          creditTier === "healthy"
                             ? "var(--primary)"
-                            : credits >= 100
+                            : creditTier === "watch"
                               ? "var(--chart-5)"
                               : "var(--destructive)",
                       }}
@@ -170,21 +171,25 @@ export function Credits() {
                     {isLoading ? "Loading..." : reserveLabel}
                   </p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {credits >= 250
+                    {creditTier === "healthy"
                       ? "You have room for active testing."
-                      : credits >= 100
+                      : creditTier === "watch"
                         ? "You can keep building, but watch spend."
                         : "A top-up is the safest next step."}
                   </p>
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <SignalTile
+                    <DashboardStatTile
                       label="Keys"
-                      value={apiKeysQuery.isPending ? "..." : `${activeKeys}`}
+                      value={apiKeysQuery.isPending ? null : `${activeKeyCount}`}
+                      cardClassName="border-border/35 bg-background/25"
+                      valueClassName="text-xl"
                     />
-                    <SignalTile
+                    <DashboardStatTile
                       label="Consumed"
-                      value={apiKeysQuery.isPending ? "..." : formatCredits(totalSpend)}
+                      value={apiKeysQuery.isPending ? null : formatCredits(totalSpend)}
+                      cardClassName="border-border/35 bg-background/25"
+                      valueClassName="text-xl"
                     />
                   </div>
                 </div>
@@ -253,7 +258,7 @@ export function Credits() {
                 title="Key footprint"
                 detail={
                   apiKeys.length > 0
-                    ? `${activeKeys} active keys have consumed ${formatCredits(totalSpend)} so far.`
+                    ? `${activeKeyCount} active keys have consumed ${formatCredits(totalSpend)} so far.`
                     : "No active keys yet."
                 }
               />
@@ -313,19 +318,6 @@ export function Credits() {
         </div>
       </div>
     </DashboardShell>
-  );
-}
-
-function SignalTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-border/35 bg-background/25 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-        {value}
-      </p>
-    </div>
   );
 }
 

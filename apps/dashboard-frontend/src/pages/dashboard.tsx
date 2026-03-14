@@ -1,16 +1,19 @@
-import { DashboardShell } from "@/dashboard-shell";
+import { ApiKeyListItem } from "@/features/dashboard/components/api-key-list-item";
+import { ApiKeyListItemSkeleton } from "@/features/dashboard/components/api-key-list-item-skeleton";
+import { DashboardEmptyState } from "@/features/dashboard/components/dashboard-empty-state";
+import { DashboardShell } from "@/features/dashboard/components/dashboard-shell";
+import { DashboardStatTile } from "@/features/dashboard/components/dashboard-stat-tile";
+import { fetchApiKeys } from "@/features/dashboard/lib/api-keys";
+import { formatCredits, formatLastUsed } from "@/features/dashboard/lib/formatters";
+import { fetchProfile } from "@/features/dashboard/lib/profile";
+import { dashboardQueryKeys } from "@/features/dashboard/lib/query-keys";
 import {
-  dashboardQueryKeys,
-  fetchApiKeys,
-  fetchProfile,
-  formatCredits,
-  formatLastUsed,
-  maskApiKey,
-} from "@/dashboard-data";
+  getApiKeysSummary,
+  getCreditTier,
+} from "@/features/dashboard/lib/selectors";
 import {
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -35,23 +38,8 @@ export function Dashboard() {
 
   const credits = profileQuery.data?.credits ?? 0;
   const apiKeys = apiKeysQuery.data?.apiKeys ?? [];
-  const activeKeys = apiKeys.filter((apiKey) => !apiKey.disabled);
-  const disabledKeys = apiKeys.length - activeKeys.length;
-  const totalSpend = apiKeys.reduce(
-    (total, apiKey) => total + apiKey.creditConsumed,
-    0
-  );
-  const highestSpendKey = [...apiKeys].sort(
-    (left, right) => right.creditConsumed - left.creditConsumed
-  )[0];
-  const latestActivity = [...apiKeys]
-    .filter((apiKey) => apiKey.lastUsed)
-    .sort(
-      (left, right) =>
-        new Date(String(right.lastUsed)).getTime() -
-        new Date(String(left.lastUsed)).getTime()
-    )
-    .slice(0, 3);
+  const { activeKeyCount, disabledKeys, totalSpend, highestSpendKey, latestActivity } =
+    getApiKeysSummary(apiKeys);
   const dashboardErrors = [
     profileQuery.error?.message,
     apiKeysQuery.error?.message,
@@ -59,10 +47,11 @@ export function Dashboard() {
   const isLoading =
     (profileQuery.isPending && !profileQuery.data) ||
     (apiKeysQuery.isPending && !apiKeysQuery.data);
+  const creditTier = getCreditTier(credits);
   const runwayLabel =
-    credits >= 250
+    creditTier === "healthy"
       ? "Comfortable runway"
-      : credits >= 100
+      : creditTier === "watch"
         ? "Watch balance"
         : "Low runway";
 
@@ -95,27 +84,27 @@ export function Dashboard() {
     >
       <div className="space-y-4">
         <div className="grid gap-3 md:grid-cols-3">
-          <MetricTile
+          <DashboardStatTile
             label="Credits"
             value={isLoading ? null : formatCredits(credits)}
             detail={
-              credits >= 250
+              creditTier === "healthy"
                 ? "Healthy balance"
-                : credits >= 100
+                : creditTier === "watch"
                   ? "Enough for active testing"
                   : "Top up soon"
             }
           />
-          <MetricTile
+          <DashboardStatTile
             label="Active keys"
-            value={isLoading ? null : `${activeKeys.length}`}
+            value={isLoading ? null : `${activeKeyCount}`}
             detail={
-              activeKeys.length > 0
+              activeKeyCount > 0
                 ? `${disabledKeys} inactive`
                 : "No active keys yet"
             }
           />
-          <MetricTile
+          <DashboardStatTile
             label="Consumed"
             value={isLoading ? null : formatCredits(totalSpend)}
             detail={highestSpendKey ? highestSpendKey.name : "No usage yet"}
@@ -141,51 +130,24 @@ export function Dashboard() {
             <CardContent className="space-y-3 pt-5">
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, index) => (
-                  <KeyRowSkeleton key={index} />
+                  <ApiKeyListItemSkeleton
+                    key={index}
+                    layoutClassName="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    metaGridClassName="grid grid-cols-2 gap-4 sm:min-w-[210px]"
+                  />
                 ))
               ) : apiKeys.length > 0 ? (
                 apiKeys.slice(0, 4).map((apiKey) => (
-                  <div
+                  <ApiKeyListItem
                     key={apiKey.id}
-                    className="rounded-xl border border-border/35 bg-background/25 px-4 py-3"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-foreground">
-                            {apiKey.name}
-                          </p>
-                          <Badge
-                            variant="outline"
-                            className={
-                              apiKey.disabled
-                                ? "border-border/50 bg-background/30 text-muted-foreground"
-                                : "border-primary/30 bg-primary/10 text-foreground"
-                            }
-                          >
-                            {apiKey.disabled ? "disabled" : "active"}
-                          </Badge>
-                        </div>
-                        <p className="mt-1.5 font-mono text-xs text-muted-foreground">
-                          {maskApiKey(apiKey.apiKey)}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 text-xs sm:min-w-[210px]">
-                        <MetaItem
-                          label="Last used"
-                          value={formatLastUsed(apiKey.lastUsed)}
-                        />
-                        <MetaItem
-                          label="Spent"
-                          value={formatCredits(apiKey.creditConsumed)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    apiKey={apiKey}
+                    layoutClassName="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    metaGridClassName="grid grid-cols-2 gap-4 text-xs sm:min-w-[210px]"
+                    secretClassName="mt-1.5 font-mono text-xs text-muted-foreground"
+                  />
                 ))
               ) : (
-                <EmptyPanel
+                <DashboardEmptyState
                   title="No API keys yet"
                   detail="Create your first key to start sending requests."
                   ctaLabel="Create key"
@@ -270,102 +232,11 @@ export function Dashboard() {
   );
 }
 
-function MetricTile({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string | null;
-  detail: string;
-}) {
-  return (
-    <Card className="border-border/45 bg-card/42 backdrop-blur-xl">
-      <CardContent className="px-5 py-5">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
-          {label}
-        </p>
-        {value === null ? (
-          <>
-            <Skeleton className="mt-3 h-8 w-20" />
-            <Skeleton className="mt-3 h-4 w-2/3" />
-          </>
-        ) : (
-          <>
-            <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              {value}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">{detail}</p>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function MetaItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-sm text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function KeyRowSkeleton() {
-  return (
-    <div className="rounded-xl border border-border/35 bg-background/25 px-4 py-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-40" />
-        </div>
-        <div className="grid grid-cols-2 gap-4 sm:min-w-[210px]">
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-4 w-20" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-4 w-16" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ActivitySkeleton() {
   return (
     <div className="rounded-xl border border-border/35 bg-background/25 px-4 py-3">
       <Skeleton className="h-4 w-24" />
       <Skeleton className="mt-2 h-4 w-20" />
-    </div>
-  );
-}
-
-function EmptyPanel({
-  title,
-  detail,
-  ctaLabel,
-  ctaTo,
-}: {
-  title: string;
-  detail: string;
-  ctaLabel: string;
-  ctaTo: string;
-}) {
-  return (
-    <div className="rounded-xl border border-dashed border-border/55 bg-background/20 p-5">
-      <p className="text-base font-semibold text-foreground">{title}</p>
-      <p className="mt-2 max-w-md text-sm leading-7 text-muted-foreground">
-        {detail}
-      </p>
-      <Button className="mt-4 h-10" asChild>
-        <Link to={ctaTo}>{ctaLabel}</Link>
-      </Button>
     </div>
   );
 }
