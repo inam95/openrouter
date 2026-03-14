@@ -10,7 +10,9 @@ export abstract class PaymentService {
           id: userId,
         },
         data: {
-          credits: ONRAMP_AMOUNT,
+          credits: {
+            increment: ONRAMP_AMOUNT,
+          },
         },
       }),
       prisma.onrampTransaction.create({

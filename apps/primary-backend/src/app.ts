@@ -7,7 +7,12 @@ import { app as paymentApp } from "./modules/payments";
 import { app as userApp } from "./modules/user";
 
 export const app = new Elysia()
-  .use(cors())
+  .use(
+    cors({
+      origin: "http://localhost:3001",
+      credentials: true,
+    })
+  )
   .use(authApp)
   .use(apiKeyApp)
   .use(modelApp)

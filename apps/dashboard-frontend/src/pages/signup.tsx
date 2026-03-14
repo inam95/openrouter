@@ -14,7 +14,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 
 const CAPABILITIES = [
   {
@@ -37,12 +37,8 @@ const CAPABILITIES = [
 
 export function Signup() {
   const navigate = useNavigate();
-  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
-    null
-  );
 
   const mutation = useMutation({
     mutationFn: async ({
@@ -67,8 +63,8 @@ export function Signup() {
     onMutate: () => {
       setFormError(null);
     },
-    onSuccess: () => {
-      setRedirectCountdown(3);
+    onSuccess: (_, { email, password }) => {
+      navigate("/signin", { state: { email, password } });
     },
     onError: (error) => {
       setFormError(error.message);
@@ -112,101 +108,10 @@ export function Signup() {
     },
   });
 
-  useEffect(() => {
-    if (redirectCountdown === null) return;
-    if (redirectCountdown <= 0) {
-      navigate("/signin");
-      return;
-    }
-    const timer = setTimeout(() => {
-      setRedirectCountdown((prev) => (prev !== null ? prev - 1 : null));
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [redirectCountdown, navigate]);
-
-  useEffect(() => {
-    return () => {
-      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
-    };
-  }, []);
-
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
     void form.handleSubmit();
-  }
-
-  /* ---- Success state ---- */
-  if (mutation.isSuccess) {
-    return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-        <div className="noise-overlay absolute inset-0 bg-background" />
-
-        <div className="relative z-10 flex flex-col items-center gap-8 px-6 text-center animate-in fade-in zoom-in-95 duration-500">
-          {/* Countdown ring */}
-          <div className="relative flex size-24 items-center justify-center">
-            <svg className="absolute inset-0 -rotate-90" viewBox="0 0 40 40">
-              <circle
-                cx="20"
-                cy="20"
-                r="18"
-                fill="none"
-                stroke="var(--border)"
-                strokeWidth="1"
-              />
-              <circle
-                cx="20"
-                cy="20"
-                r="18"
-                fill="none"
-                stroke="var(--primary)"
-                strokeWidth="1.5"
-                className="countdown-ring-animate"
-              />
-            </svg>
-            <svg
-              className="size-8 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.5 12.75l6 6 9-13.5"
-                className="check-animate"
-              />
-            </svg>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              You're in.
-            </h2>
-            <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Your account is ready. Redirecting to sign in
-              {redirectCountdown !== null && (
-                <span className="font-mono text-foreground">
-                  {" "}
-                  in {redirectCountdown}s
-                </span>
-              )}
-              ...
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="border-border/60"
-          >
-            <Link to="/signin">Skip to sign in</Link>
-          </Button>
-        </div>
-      </div>
-    );
   }
 
   /* ---- Main signup layout ---- */
@@ -533,7 +438,7 @@ export function Signup() {
                       <Button
                         type="submit"
                         className="h-10 w-full font-medium cursor-pointer"
-                        disabled={!canSubmit || isSubmitting || mutation.isSuccess}
+                        disabled={!canSubmit || isSubmitting || mutation.isPending}
                       >
                         {isSubmitting ? (
                           <span className="flex items-center gap-2">

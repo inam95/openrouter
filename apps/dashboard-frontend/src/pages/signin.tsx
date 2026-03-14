@@ -12,7 +12,7 @@ import {
 } from "@repo/ui";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { type FormEvent, useState } from "react";
 
 const CAPABILITIES = [
@@ -34,8 +34,12 @@ const CAPABILITIES = [
   },
 ];
 
+type SigninLocationState = { email?: string; password?: string } | null;
+
 export function Signin() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefilled = location.state as SigninLocationState;
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -72,8 +76,8 @@ export function Signin() {
 
   const form = useForm({
     defaultValues: {
-      email: "",
-      password: "",
+      email: prefilled?.email ?? "",
+      password: prefilled?.password ?? "",
     },
     validators: {
       onChange: ({ value }) => {
